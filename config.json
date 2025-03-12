@@ -1,0 +1,13 @@
+{
+    "database": {
+      "host": "localhost",
+      "port": 5432,
+      "name": "Fellowship Fantasy Football"
+    },
+    "settings": {
+      "use_cache": true,
+      "cache_ttl": 86400,
+      "update_frequency": "daily"
+    }
+  }
+  
