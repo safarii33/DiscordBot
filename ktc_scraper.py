@@ -4,15 +4,20 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager import web_driver_manager
+from webdriver_manager.chrome import ChromeDriverManager
+from web_driver import WebDriverManager  # ✅ Import the class
+
 import time
 
 def get_ktc_risers_and_fallers():
 
     # Initialize WebDriver
+    web_driver_manager = WebDriverManager()
     driver = web_driver_manager.get_driver()
     url = "https://keeptradecut.com/dynasty-rankings"
     driver.get(url)
+
+    wait = WebDriverWait(driver, 10)
 
     # Handle KTC pop-up if needed
     try:

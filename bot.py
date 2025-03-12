@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from database import get_biggest_moves
 from discord_commands import register_commands
 from ktc_scraper import get_ktc_risers_and_fallers
-from webdriver_manager import web_driver_manager
+from web_driver import web_driver_manager
 
 # # Load environment variables
 load_dotenv()
@@ -41,20 +41,22 @@ async def movers(ctx):
     if not data:
         await ctx.send("I was not able to retrieve the data. Please check with a developer for assistance.")
         return
-    await ctx.send("🏈⬆️⬇️ **Biggest Movers:**")
+    await ctx.send(f"🏈⬆️⬇️ **Biggest Movers: Requested by {ctx.author.mention}**")
     risers = "\n".join([f"🔼 {r['name']} - {r['value']}" for r in data["risers"]])
     fallers = "\n".join([f"🔽 {f['name']} - {f['value']}" for f in data["fallers"]])
 
-    embed = discord.Embed(title="📈 KTC Market Movers (30 Days)", color=0x00FF00)
-    embed.add_field(name="🔥 Top 5 Risers", value=risers, inline=False)
-    embed.add_field(name="❄️ Top 5 Fallers", value=fallers, inline=False)
+    # embed = discord.Embed(title="📈 KTC Market Movers (30 Days)", color=0x00FF00)
+    # embed.add_field(name="🔥 Top 5 Risers", value=risers, inline=False)
+    # embed.add_field(name="❄️ Top 5 Fallers", value=fallers, inline=False)
 
-    # resp = f"**🔥 Top 5 Risers (30 Days) 🔥**\n{risers}\n\n**❄️ Top 5 Fallers (30 Days) ❄️**\n{fallers}"
+    resp = f"**🔥 Top 5 Risers (30 Days) 🔥**\n{risers}\n\n**❄️ Top 5 Fallers (30 Days) ❄️**\n{fallers}"
 
-    # await ctx.send(resp)
+    await ctx.send(resp)
+    
 @bot.event
 async def on_shutdown():
     """Cleanup WebDriver on shutdown."""
+    global web_driver_manager
     web_driver_manager.quit_driver()
 
 # Start the bot
