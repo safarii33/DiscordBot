@@ -17,6 +17,9 @@ class SleeperJob:
             return {"error": f"Failed to fetch users: {response.status_code}"}
 
     def get_standings(self):
+
+        """get standings is a method that fetches the standings from Sleeper.
+        It returns the standings in the form of a JSON object."""
         """Fetch standings from Sleeper."""
         url = f"{self.BASE_URL}/{self.league_id}/rosters"
         response = requests.get(url)
@@ -25,7 +28,13 @@ class SleeperJob:
             return response.json()
         else:
             return {"error": f"Failed to fetch standings: {response.status_code}"}
+        
     def get_team_name(self, team_id):
+        """
+        returns the team name from the team_id
+        in the form of a string.
+        get team name is a method that fetches the team name from Sleeper.
+        So that our standings method can display the team name instead of the team ID."""
         """Fetch team name from Sleeper."""
         url = f"https://api.sleeper.app/v1/league/{self.league_id}/users"
         response = requests.get(url)

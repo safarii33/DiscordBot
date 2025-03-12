@@ -1,4 +1,13 @@
 {
-    "CLIENT_ID": 1324437244781658159,
-    "CLIENT_SECRET": "gKp4gCL5EY_6aw2NAnhLI-QEMFcpQiHk"
-}
+    "database": {
+      "host": "localhost",
+      "port": 5432,
+      "name": "Fellowship Fantasy Football"
+    },
+    "settings": {
+      "use_cache": true,
+      "cache_ttl": 86400,
+      "update_frequency": "daily"
+    }
+  }
+  
