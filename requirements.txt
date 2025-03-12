@@ -3,3 +3,4 @@ psycopg2
 python-dotenv
 requests
 selenium
+webdriver-manager
