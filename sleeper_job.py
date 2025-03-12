@@ -1,7 +1,7 @@
 import requests
 
 class SleeperJob:
-    BASE_URL = "https://api.sleeper.app/v1/league/1180277339947143168"
+    BASE_URL = "https://api.sleeper.app/v1/league"
 
     def __init__(self, league_id):
         self.league_id = league_id
@@ -25,3 +25,16 @@ class SleeperJob:
             return response.json()
         else:
             return {"error": f"Failed to fetch standings: {response.status_code}"}
+    def get_team_name(self, team_id):
+        """Fetch team name from Sleeper."""
+        url = f"https://api.sleeper.app/v1/league/{self.league_id}/users"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            users = response.json()
+            for user in users:
+                if user["user_id"] == team_id:
+                    return user.get("team_name") or user.get("metadata", {}).get("team_name", f"{user.get('display_name')}")
+            return "Team not found"
+        else:
+            return "Failed to fetch team name"
