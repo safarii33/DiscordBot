@@ -47,3 +47,14 @@ class SleeperJob:
             return "Team not found"
         else:
             return "Failed to fetch team name"
+        
+        
+    def get_player_stats(self, player_id):
+        """Fetch player stats from Sleeper."""
+        url = f"https://api.sleeper.app/v1/players/nfl/{player_id}"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": f"Failed to fetch player stats: {response.status_code}"}

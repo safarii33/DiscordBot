@@ -3,11 +3,11 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from database import get_biggest_moves
+from database.database import get_biggest_moves
 from discord_commands import register_commands
-from ktc_scraper import get_ktc_risers_and_fallers
-from web_driver import web_driver_manager
-from sleeper_job import SleeperJob
+from scraper.ktc_scraper import get_ktc_risers_and_fallers
+from scraper.web_driver import web_driver_manager
+from resources.jobs.sleeper_job import SleeperJob
 
 # Load environment variables
 load_dotenv()
@@ -94,6 +94,12 @@ async def standings(ctx):
         standings_msg += f"**{team_name}** | **{wins}W - {losses}L ----> Win % ➡️ {calculated_win_percentage:.2f}%**\n"
 
     await ctx.send(standings_msg)
+
+# Sleeper Player - !players
+@bot.command()
+async def players(ctx):
+    """Command to fetch and display player stats"""
+    
 
 # Shutdown driver
 @bot.event
