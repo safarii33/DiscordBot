@@ -52,6 +52,8 @@ def get_ktc_risers_and_fallers():
 
     return {"risers": risers, "fallers": fallers}
 
+# 
+
 # Run the function
 if __name__ == "__main__":
     data = get_ktc_risers_and_fallers()
