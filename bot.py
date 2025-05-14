@@ -3,7 +3,7 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from database.database import get_biggest_moves
+from resources.db.database import get_biggest_moves
 from discord_commands import register_commands
 from scraper.ktc_scraper import get_ktc_risers_and_fallers
 from scraper.web_driver import web_driver_manager
@@ -43,7 +43,7 @@ async def on_message(message):
                                    "`!movers` - Fetch biggest movers from KeepTradeCut\n"
                                    "`!standings` - Fetch and display standings from Sleeper")
 
-# bot commands - Biggest moves - !movers    
+# bot commands - Biggest moves - !movers from KTC   
 @bot.command(name="movers")
 async def movers(ctx):
     # fetch biggest movers from keeptradecut.com
