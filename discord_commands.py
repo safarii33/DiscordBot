@@ -1,6 +1,6 @@
 # discord db import import
 from discord.ext import commands
-from database import get_biggest_moves
+from src.resources.db.database import get_biggest_moves
 
 def register_commands(bot):
     @bot.command(name="moves")

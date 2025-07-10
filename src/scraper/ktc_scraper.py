@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-from web_driver import WebDriverManager  # ✅ Import the class
+from src.scraper.web_driver import WebDriverManager  # ✅ Import the class
 
 import time
 
@@ -51,6 +51,8 @@ def get_ktc_risers_and_fallers():
     ]
 
     return {"risers": risers, "fallers": fallers}
+
+# 
 
 # Run the function
 if __name__ == "__main__":
