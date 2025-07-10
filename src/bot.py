@@ -136,7 +136,17 @@ async def standings(ctx):
 @bot.command()
 async def players(ctx):
     """Command to fetch and display player stats"""
-    
+
+@bot.command(name="trades")
+async def transactions(ctx, week: int = None):
+    """Command to fetch and display league transactions for a given week."""
+    if week is None:
+        # Get current NFL state to determine the current week
+        nfl_state = sleeper.get_nfl_state()
+        if "error" in nfl_state:
+            await ctx.send(nfl_state["error"])
+            return
+        week = nfl_state.get("current_week", 1)
 
 # Shutdown driver
 @bot.event

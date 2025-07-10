@@ -1,8 +1,8 @@
 import requests
 import json
 from datetime import datetime
-import psycopg2
-from resources.db.database import get_db_connection
+# import psycopg2
+from src.resources.db.database import get_db_connection
 
 class RapidApiNFL:
     BASE_URL = "https://nfl-api-data.p.rapidapi.com"
@@ -18,6 +18,28 @@ class RapidApiNFL:
         response = requests.get(url, headers=self.headers)
         with open("nfl_data.json", "w") as f:
             json.dump(response.json(), f, indent=4)
+
+    def _make_request(self, url, params=None):
+        """Helper method to make API requests and handle responses."""
+        try:
+            response = requests.get(url, headers=self.headers, params=params, timeout=10)
+            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+            return response.json()
+        except requests.exceptions.HTTPError as http_err:
+            print(f"HTTP error occurred: {http_err} - Response: {response.text}")
+            return None
+        except requests.exceptions.ConnectionError as conn_err:
+            print(f"Connection error occurred: {conn_err}")
+            return None
+        except requests.exceptions.Timeout as timeout_err:
+            print(f"Request timed out: {timeout_err}")
+            return None
+        except requests.exceptions.RequestException as req_err:
+            print(f"An unexpected error occurred: {req_err}")
+            return None
+        except json.JSONDecodeError as json_err:
+            print(f"Error decoding JSON response: {json_err} - Raw response: {response.text}")
+            return None
     
     def get_nfl_player_info(self, player_id):
         """Fetch NFL player information from the API."""
@@ -27,14 +49,33 @@ class RapidApiNFL:
         with open("nfl_data.json", "w") as f:
             json.dump(response.json(), f, indent=4)
 
-    def get_nfl_team_listings(self):          
-        """Fetch NFL team listings from the API."""
+    def get_nfl_team_listings(self):         
+        """Fetch NFL team listings from the API and store them."""
         url = f"{self.BASE_URL}/nfl-team-listing/v1/data"
-        res = requests.get(url, headers=self.headers)
-        if res.status_code == 200:
+        
+        # Use the helper method to get the parsed JSON data
+        data = self._make_request(url) 
+
+        if data: # Check if data was successfully fetched and parsed
             print("✅ Data fetched successfully")
-        for team in res:
-            self.store_team_data(team)
+            
+            # Assuming the API returns a dictionary with a "teams" key
+            # or directly a list of team objects. Adjust based on actual API response.
+            if isinstance(data, dict) and "teams" in data:
+                teams = data["teams"]
+            elif isinstance(data, list): # If the API returns a list directly
+                teams = data
+            else:
+                print("Unexpected data format for NFL team listings.")
+                return None # Or raise an error as appropriate
+
+            for team_data_item in teams: # Iterate over the list of team dictionaries
+                self.store_team_data(team_data_item)
+
+            # Optionally save the full response to a file (for debugging/inspection)
+            with open("nfl_team_listings.json", "w") as f:
+                json.dump(data, f, indent=4)
+        return data # Return the fetched data
 
         with open("nfl_data.json", "w") as f:
             json.dump(res.json(), f, indent=4)
@@ -49,7 +90,7 @@ class RapidApiNFL:
             json.dump(response.json(), f, indent=4)
 
         # response = requests.get(url, headers=headers) # NFL News
-        response = requests.get(url, headers=headers, params=querystring) # NFL Player Info
+        response = requests.get(url, headers=self.headers, params=querystring) # NFL Player Info
         print(response.json())
     
     def store_team_data(self, team_data):
