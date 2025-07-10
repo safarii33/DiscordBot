@@ -1,13 +1,18 @@
 import requests
 import json
 from datetime import datetime
+import os
 # import psycopg2
 from src.resources.db.database import get_db_connection
 
-class RapidApiNFL:
+class RapidApiNFLClient:
+    """Client for interacting with the NFL API via RapidAPI."""
     BASE_URL = "https://nfl-api-data.p.rapidapi.com"
 
     def __init__(self):
+        self.api_key = os.getenv("RAPIDAPI_KEY", "6d00c23a97mshacfcd10ecd38be6p12fd9cjsn51e5d102a15e") # Use env variable or default
+        if not self.api_key:
+            raise ValueError("RAPIDAPI_KEY environment variable not set. Please set it to your RapidAPI key.")
         self.headers = {
             "x-rapidapi-key": "6d00c23a97mshacfcd10ecd38be6p12fd9cjsn51e5d102a15e",
             "x-rapidapi-host": "nfl-api-data.p.rapidapi.com"
