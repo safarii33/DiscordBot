@@ -3,10 +3,10 @@ import json
 import os
 import asyncio
 from src.api.sleeper import SleeperClient
-from src.api.rapidapi_nfl import RapidAPINFLClient
+from src.api.rapidapi_nfl import RapidApiNFLClient
 
 class PlayerDataManager:
-    def __init__(self, sleeper_client: SleeperClient, rapidapi_nfl_client: RapidAPINFLClient):
+    def __init__(self, sleeper_client: SleeperClient, rapidapi_nfl_client: RapidApiNFLClient):
         self.sleeper_client = sleeper_client
         self.rapidapi_nfl_client = rapidapi_nfl_client
         self._player_id_cache = {} # Map Sleeper Player ID to full data
