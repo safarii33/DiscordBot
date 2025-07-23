@@ -4,7 +4,7 @@ from discord.ext import commands
 
 # Import your API clients and core logic classes
 from src.api.sleeper import SleeperClient
-from src.api.rapidapi_nfl import RapidApiNFLClient
+# from src.api.rapidapi_nfl import RapidApiNFLClient
 from src.api.ktc_scraper import KTCScraper
 from src.core.player_data_manager import PlayerDataManager
 from src.core.trade_analyzer import TradeAnalyzer # The class for trade wins logic
@@ -21,7 +21,7 @@ class MyDiscordBot(commands.Bot):
 
         # Initialize API clients (these manage their own connections/sessions)
         self.sleeper_client = SleeperClient(self.league_id)
-        self.rapidapi_nfl_client = RapidApiNFLClient()
+        # self.rapidapi_nfl_client = RapidApiNFLClient()
         self.ktc_scraper = KTCScraper()
 
         # Initialize core logic managers

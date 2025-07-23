@@ -3,7 +3,7 @@ import json
 import os
 import asyncio
 from src.api.sleeper import SleeperClient
-from src.api.rapidapi_nfl import RapidApiNFLClient
+# from src.api.rapidapi_nfl import RapidApiNFLClient
 
 class PlayerDataManager:
     def __init__(self, sleeper_client: SleeperClient, rapidapi_nfl_client: RapidApiNFLClient):
