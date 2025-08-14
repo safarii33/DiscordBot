@@ -6,3 +6,4 @@ selenium
 webdriver-manager
 asyncpg
 discord.py[voice]
+nfl_data_py

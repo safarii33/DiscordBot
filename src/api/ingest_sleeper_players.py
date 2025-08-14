@@ -70,7 +70,7 @@ async def process_and_store_players(players):
                 # Create table if not exists - executed within the transaction
                 # Ensure 'years_exp' is TEXT and 'last_updated' exists
                 await conn.execute("""
-                CREATE TABLE IF NOT EXISTS nfl_players (
+                CREATE TABLE IF NOT EXISTS nfl_players_sleeper (
                     player_id TEXT PRIMARY KEY,
                     team TEXT,
                     espn_id TEXT,
@@ -137,7 +137,7 @@ async def process_and_store_players(players):
                     # --- End Debugging Print Statements ---
                     try:
                         await conn.execute("""
-                            INSERT INTO nfl_players (
+                            INSERT INTO nfl_players_sleeper (
                                 player_id, team, espn_id, fantasy_data_id, first_name, last_name, college, position, search_rank,
                                 age, height, weight, high_school, rookie_year, years_exp, depth_chart_order, rotoworld_id,
                                 active, sportradar_id, number, rotowire_id, created_at, last_updated

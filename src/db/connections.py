@@ -1,4 +1,4 @@
-# src/db/connection.py
+# src/db/connections.py
 import asyncpg
 import os
 
