@@ -6,10 +6,10 @@ from datetime import datetime, timedelta, time
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from src.resources.db.database import get_biggest_moves
-from discord_commands import register_commands
+from src.bot.commands.discord_commands import register_commands
 from src.scraper.ktc_scraper import get_ktc_risers_and_fallers
 from src.scraper.web_driver import web_driver_manager
-from src.jobs.sleeper_job import SleeperJob
+from src.api.sleeper_job import SleeperJob
 
 # Load environment variables
 load_dotenv()

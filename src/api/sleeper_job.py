@@ -47,7 +47,7 @@ class SleeperJob:
 
     def get_users(self):
         """Fetch all users in the Sleeper league."""
-        endpoint = f"league/{self.league_id}/users"
+        endpoint = f"{self.league_id}/users"
         return self._make_request(endpoint)
 
     def get_rosters(self):
@@ -175,16 +175,18 @@ if __name__ == "__main__":
     
     # Create an instance of the SleeperJob class
     sleeper_job_instance = SleeperJob(league_id=league_id_from_env)
+    # Example usage: Fetch all users in the league
+    users = sleeper_job_instance.get_users()
 
     # Now call the method on that instance, passing the 'week' argument
     # trades = sleeper_job_instance.get_league_transactions(round=1)
-    trades = sleeper_job_instance.get_trades(week=1)  
+    # trades = sleeper_job_instance.get_trades(week=1)  
     
-    if trades:
-        print(f"Successfully fetched {len(trades)} transactions for week 1.")
+    # if trades:
+    #     print(f"Successfully fetched {len(trades)} transactions for week 1.")
         # You can now iterate through 'trades' and process them
-        for trade in trades[:5]: # Print first 5 for brevity
-            print(json.dumps(trade, indent=2))
-            print("")
-    else:
-        print("Failed to fetch transactions or no transactions found.")
+    #     for trade in trades[:5]: # Print first 5 for brevity
+    #         print(json.dumps(trade, indent=2))
+    #         print("")
+    # else:
+    #     print("Failed to fetch transactions or no transactions found.")
