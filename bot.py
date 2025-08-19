@@ -9,7 +9,8 @@ from src.resources.db.database import get_biggest_moves
 from src.bot.commands.discord_commands import register_commands
 from src.scraper.ktc_scraper import get_ktc_risers_and_fallers
 from src.scraper.web_driver import web_driver_manager
-from src.api.sleeper_job import SleeperJob
+from src.api.sleeper_tasks import SleeperJob
+from src.services.prediction_service import get_fantasy_prediction
 
 # Load environment variables
 load_dotenv()
@@ -135,6 +136,7 @@ async def standings(ctx):
 # Sleeper Player - !players
 @bot.command()
 async def players(ctx):
+    pass # Placeholder for player command
     """Command to fetch and display player stats"""
 
 @bot.command(name="trades")
@@ -147,6 +149,19 @@ async def transactions(ctx, week: int = None):
             await ctx.send(nfl_state["error"])
             return
         week = nfl_state.get("current_week", 1)
+
+@bot.command(name="predict")
+async def predict(ctx, *, query: str):
+    """
+    DM the user a fantasy prediction based on their query.
+    Usage: !predict <your question>
+    """
+    await ctx.send(f"🔮 Working on your prediction, {ctx.author.mention}... Check your DMs!")
+    prediction = get_fantasy_prediction(query)
+    try:
+        await ctx.author.send(f"📝 Fantasy Prediction for '{query}':\n{prediction}")
+    except discord.Forbidden:
+        await ctx.send("❌ I couldn't DM you. Please enable DMs from server members.")
 
 # Shutdown driver
 @bot.event

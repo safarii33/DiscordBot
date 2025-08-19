@@ -7,3 +7,7 @@ webdriver-manager
 asyncpg
 discord.py[voice]
 nfl_data_py
+scikit-learn
+pandas
+openai
+numpy
