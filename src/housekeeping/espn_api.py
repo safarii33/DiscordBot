@@ -6,7 +6,7 @@ import asyncio
 import asyncpg
 
 # Import the async connection pool functions
-from src.db.connections import get_db_connection_pool, close_db_connection_pool
+from src.db.db_operations.connections import get_db_connection_pool, close_db_connection_pool
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
@@ -16,7 +16,6 @@ load_dotenv()
 # IMPORTANT: Updated for ESPN Core API Athletes endpoint.
 # This endpoint provides all active athletes directly, no need to iterate by team.
 ESPN_BASE_URL = "https://sports.core.api.espn.com/v3/sports/football/nfl/"
-ESPN_BASE_URL_V2 = "https://sports.core.api.espn.com/v2/sports/football/nfl/"
 
 # --- Database Configuration ---
 DATABASE_URL = (
@@ -89,6 +88,7 @@ async def fetch_espn_players(route):
 async def process_and_store_espn_players(players_data_from_api):
     """
     Processes and stores player data fetched from espn (ESPN Core API) into the PostgreSQL nfl_players table.
+    Only inserts columns defined in the current CREATE TABLE statement.
     """
     if not players_data_from_api:
         print("No espn player data to process.")
@@ -103,28 +103,16 @@ async def process_and_store_espn_players(players_data_from_api):
         async with conn.transaction(): 
             try:
                 await conn.execute("""
-                CREATE TABLE IF NOT EXISTS nfl_players (
+                CREATE TABLE IF NOT EXISTS nfl.nfl_players (
                     player_id TEXT PRIMARY KEY,
-                    team TEXT,
                     espn_id TEXT,
-                    fantasy_data_id INTEGER,
                     first_name TEXT,
                     last_name TEXT,
-                    college TEXT,
-                    position TEXT,
-                    search_rank INTEGER,
                     age INTEGER,
                     height TEXT,
-                    weight TEXT,
-                    high_school TEXT,
-                    rookie_year INTEGER,
                     years_exp TEXT,
-                    depth_chart_order INTEGER,
-                    rotoworld_id INTEGER,
                     active BOOLEAN,
-                    sportradar_id TEXT,
                     number INTEGER,
-                    rotowire_id INTEGER,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                     last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 );
@@ -136,133 +124,68 @@ async def process_and_store_espn_players(players_data_from_api):
                     return
 
                 processed_count = 0
+                skip_count = 0
+                skip_inactive = 0
+                # skipped players
                 for player_raw_data in players_data_from_api:
                     if not isinstance(player_raw_data, dict):
-                        print(f"⚠️ Skipping player record: Not a dictionary ({type(player_raw_data)}).")
+                        skip_count += 1
                         continue
-                    if player_raw_data.get("active") is not True:
-                        print(f"⚠️ Skipping inactive player: {player_raw_data.get('displayName', 'Unknown Player')}")
-                        continue
-                    # --- Data Mapping from ESPN Core API Athlete to nfl_players table ---
-                    # Based on common ESPN athlete object structure
-                    
-                    player_id = player_raw_data.get("id") # ESPN's athlete ID
-                    
+                    # --- Only map columns that exist in the table ---
+                    player_id = str(player_raw_data.get("id")) if player_raw_data.get("id") else None
                     if not player_id:
-                        print(f"⚠️ Skipping player: No 'id' found in record: {player_raw_data.get('displayName', 'Unknown Player')}")
+                        skip_count += 1
                         continue
 
-                    player_id_str = str(player_id)
+                    if player_raw_data.get("active") is not True:
+                        skip_inactive += 1
+                        continue
 
-                    # Team abbreviation is usually nested under 'team' object
-                    team_abbr = player_raw_data.get("team", {}).get("abbreviation")
-                    
-                    # ESPN often has 'firstName' and 'lastName'
+                    espn_id = player_id
                     first_name = player_raw_data.get("firstName")
                     last_name = player_raw_data.get("lastName")
-                    
-                    # Position abbreviation is usually nested under 'position' object
-                    position = player_raw_data.get("position", {}).get("abbreviation")
-                    
-                    jersey_number = clean_int(player_raw_data.get("jersey"))
-
-                    # ESPN might have 'displayHeight' or 'height' (in inches)
+                    age = clean_int(player_raw_data.get("age"))
                     height = player_raw_data.get("displayHeight") or player_raw_data.get("height")
-                    weight = clean_int(player_raw_data.get("weight"))
-                    
-                    # College name from nested 'college' object
-                    college = player_raw_data.get("college", {}).get("name")
-                    
-                    # Experience is often nested under 'experience' object
                     years_exp_raw = player_raw_data.get("experience", {}).get("years")
-                    years_exp_str = str(years_exp_raw) if years_exp_raw is not None else None
-                    
-                    # Rookie year might be derived or explicitly provided
-                    # ESPN Core API might have a 'rookieYear' or 'firstSeason' field, check API docs
-                    rookie_year = clean_int(player_raw_data.get("rookieYear")) # Assuming a 'rookieYear' field
-                    if rookie_year is None: # Fallback if not directly provided
-                        # Try to infer from 'experience' if 'years' is 0 or 'R'
-                        if years_exp_raw == 0 or years_exp_str == 'R':
-                            # This is a guess, you might need to get current year or season from another API call
-                            rookie_year = datetime.now().year # Or current NFL season year
-                    
+                    years_exp = str(years_exp_raw) if years_exp_raw is not None else None
                     active = player_raw_data.get("active")
-                    
-                    # ESPN's own ID is typically the 'id' field for the athlete
-                    espn_id_str = player_id_str 
-                    
-                    # Other IDs from Sleeper that ESPN might not have, default to None
-                    fantasy_data_id = None
-                    search_rank = None
-                    age = clean_int(player_raw_data.get("age")) # Assuming 'age' field exists
-                    high_school = None # Not commonly in this ESPN athlete endpoint
-                    depth_chart_order = None
-                    rotoworld_id = None
-                    sportradar_id = None
-                    number = jersey_number
-                    rotowire_id = None
+                    number = clean_int(player_raw_data.get("jersey"))
 
                     try:
                         await conn.execute("""
-                            INSERT INTO nfl_players (
-                                player_id, team, espn_id, fantasy_data_id, first_name, last_name, college, position, search_rank,
-                                age, height, weight, high_school, rookie_year, years_exp, depth_chart_order, rotoworld_id,
-                                active, sportradar_id, number, rotowire_id, created_at, last_updated
-                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+                            INSERT INTO nfl.nfl_players (
+                                player_id, espn_id, first_name, last_name, age, height, years_exp, active, number, created_at, last_updated
+                            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                             ON CONFLICT (player_id) DO UPDATE 
                             SET 
-                                team = EXCLUDED.team,
                                 espn_id = EXCLUDED.espn_id,
-                                fantasy_data_id = EXCLUDED.fantasy_data_id,
                                 first_name = EXCLUDED.first_name,
                                 last_name = EXCLUDED.last_name,
-                                college = EXCLUDED.college,
-                                position = EXCLUDED.position,
-                                search_rank = EXCLUDED.search_rank,
                                 age = EXCLUDED.age,
                                 height = EXCLUDED.height,
-                                weight = EXCLUDED.weight,
-                                high_school = EXCLUDED.high_school,
-                                rookie_year = EXCLUDED.rookie_year,
                                 years_exp = EXCLUDED.years_exp,
-                                depth_chart_order = EXCLUDED.depth_chart_order,
-                                rotoworld_id = EXCLUDED.rotoworld_id,
                                 active = EXCLUDED.active,
-                                sportradar_id = EXCLUDED.sportradar_id,
                                 number = EXCLUDED.number,
-                                rotowire_id = EXCLUDED.rotowire_id,
                                 last_updated = NOW();
                         """, 
-                        player_id_str,
-                        team_abbr,
-                        espn_id_str,
-                        fantasy_data_id,
+                        player_id,
+                        espn_id,
                         first_name,
                         last_name,
-                        college,
-                        position,
-                        search_rank,
                         age,
                         height,
-                        weight,
-                        high_school,
-                        rookie_year,
-                        years_exp_str,
-                        depth_chart_order,
-                        rotoworld_id,
+                        years_exp,
                         active,
-                        sportradar_id,
                         number,
-                        rotowire_id,
                         datetime.now(),
                         datetime.now()
                         )
                         processed_count += 1
                         
                     except asyncpg.PostgresError as e:
-                        print(f"❌ Database error processing espn player {player_id_str}: {e}")
+                        print(f"❌ Database error processing espn player {player_id}: {e}")
                     except Exception as e:
-                        print(f"❌ Unexpected error processing espn player {player_id_str}: {e}")
+                        print(f"❌ Unexpected error processing espn player {player_id}: {e}")
                 
                 print(f"✅ Processed {processed_count} espn player records.")
                 print(f"✅ All espn player data processed and stored successfully!")
@@ -270,13 +193,13 @@ async def process_and_store_espn_players(players_data_from_api):
             except Exception as e:
                 print(f"❌ An error occurred during espn player data processing: {e}")
                 raise
-
+            print(f'skipped players, not a dict or player_id not found: {skip_count}, '
+                  f'skipped inactive players: {skip_inactive}')
 # --- Team Data Ingestion ---
 
 def fetch_espn_teams(route):
     """Fetches team data from espn and returns it as JSON."""
-    teams_url = f"{ESPN_BASE_URL_V2}{route}"
-
+    teams_url = f"{ESPN_BASE_URL}{route}"
 
     try:
         print(f"Attempting to fetch team data from espn URL: {teams_url}")
@@ -312,7 +235,7 @@ async def process_and_store_espn_teams(teams_data_from_api):
         async with conn.transaction():
             try:
                 await conn.execute("""
-                CREATE TABLE IF NOT EXISTS nfl_teams (
+                CREATE TABLE IF NOT EXISTS nfl.nfl_teams (
                     team_id INTEGER PRIMARY KEY,
                     name TEXT NOT NULL,
                     display_name TEXT NOT NULL,
@@ -341,15 +264,18 @@ async def process_and_store_espn_teams(teams_data_from_api):
                     return
 
                 processed_count = 0
+                skip_count = 0
                 for team_raw_data in teams_to_process:
                     if not isinstance(team_raw_data, dict):
                         print(f"⚠️ Skipping team record: Not a dictionary ({type(team_raw_data)}).")
+                        skip_count += 1
                         continue
 
                     team_data = team_raw_data.get('team', team_raw_data)
 
                     team_id = clean_int(team_data.get("id"))
                     if team_id is None:
+                        skip_count += 1
                         print(f"⚠️ Skipping team: No valid 'id' found in record: {team_data.get('displayName', 'Unknown Team')}")
                         continue
 
@@ -359,14 +285,16 @@ async def process_and_store_espn_teams(teams_data_from_api):
                     location = team_data.get("location")
                     abbreviation = team_data.get("abbreviation")
                     nickname = team_data.get("nickname")
+                    processed_count += 1
 
                     if not name or not display_name or not abbreviation:
+                        skip_count += 1
                         print(f"⚠️ Skipping team {team_id}: Missing required fields (name, displayName, or abbreviation).")
                         continue
 
                     try:
                         await conn.execute("""
-                            INSERT INTO nfl_teams (
+                            INSERT INTO nfl.nfl_teams (
                                 team_id, name, display_name, short_display_name, location, abbreviation, nickname, created_at, last_updated
                             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                             ON CONFLICT (team_id) DO UPDATE 
@@ -389,13 +317,13 @@ async def process_and_store_espn_teams(teams_data_from_api):
                         datetime.now(),
                         datetime.now()
                         )
-                        processed_count += 1
+                        
                         
                     except asyncpg.PostgresError as e:
                         print(f"❌ Database error processing team {team_id}: {e}")
                     except Exception as e:
                         print(f"❌ Unexpected error processing team {team_id}: {e}")
-                
+                print(f'skipped teams, not a dict or team_id not found: {skip_count}')
                 print(f"✅ Processed {processed_count} team records.")
                 print(f"✅ All espn team data processed and stored successfully!")
 
@@ -412,8 +340,7 @@ async def main():
     
     # --- Then Ingest Players ---
     espn_players_data = await fetch_espn_players("athletes?limit=20000&active=true") # Fetch all active players
-    print("stopping here to debug espn_players_data")
-    print(espn_players_data)
+    
     if espn_players_data:
         await process_and_store_espn_players(espn_players_data)
     

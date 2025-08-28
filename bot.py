@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 from src.resources.db.database import get_biggest_moves
 from src.bot.commands.discord_commands import register_commands
 from src.scraper.ktc_scraper import get_ktc_risers_and_fallers
-from src.scraper.web_driver import web_driver_manager
-from src.api.sleeper_tasks import SleeperJob
-from src.services.prediction_service import get_fantasy_prediction
+from src.utils.web_driver import web_driver_manager
+from sleeper_tasks import SleeperJob
+# from src.services.prediction_service import get_fantasy_prediction
 
 # Load environment variables
 load_dotenv()

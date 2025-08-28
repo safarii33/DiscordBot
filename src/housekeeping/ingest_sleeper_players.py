@@ -5,7 +5,7 @@ from datetime import datetime
 import asyncio # New: For running async code
 
 # New: Import the async connection pool functions
-from src.db.connections import get_db_connection_pool, close_db_connection_pool
+from src.db.db_operations.connections import get_db_connection_pool, close_db_connection_pool
 import asyncpg # New: Import asyncpg for type hinting and error handling
 
 # Load environment variables from .env file
@@ -53,6 +53,7 @@ async def process_and_store_players(players):
     Inserts or updates player data into the PostgreSQL nfl_players table using asyncpg.
     Uses ON CONFLICT (UPSERT) for efficient updates.
     """
+    processed_count = 0
     if not players:
         print("No player data to process.")
         return
@@ -67,10 +68,12 @@ async def process_and_store_players(players):
     async with pool.acquire() as conn:
         async with conn.transaction(): 
             try:
+                # Ensure the schema exists
+                await conn.execute("CREATE SCHEMA IF NOT EXISTS nfl;")
                 # Create table if not exists - executed within the transaction
                 # Ensure 'years_exp' is TEXT and 'last_updated' exists
                 await conn.execute("""
-                CREATE TABLE IF NOT EXISTS nfl_players_sleeper (
+                CREATE TABLE IF NOT EXISTS nfl.nfl_players_sleeper (
                     player_id TEXT PRIMARY KEY,
                     team TEXT,
                     espn_id TEXT,
@@ -124,20 +127,9 @@ async def process_and_store_players(players):
                     espn_id_raw = data.get("espn_id")
                     espn_id_str = str(espn_id_raw) if espn_id_raw is not None else None
 
-                    # --- Debugging Print Statements ---
-                    # These will show you the exact types and values being sent for problematic fields
-                    # You can remove these once the issue is resolved.
-                    print(f"--- Player {player_id_str} Data Types & Values ---")
-                    print(f"  espn_id_str: '{espn_id_str}' (Type: {type(espn_id_str)})")
-                    print(f"  years_exp_str: '{years_exp_str}' (Type: {type(years_exp_str)})")
-                    print(f"  fantasy_data_id: {fantasy_data_id} (Type: {type(fantasy_data_id)})")
-                    print(f"  rookie_year: {rookie_year} (Type: {type(rookie_year)})")
-                    print(f"  number: {number} (Type: {type(number)})")
-                    print(f"------------------------------------")
-                    # --- End Debugging Print Statements ---
                     try:
                         await conn.execute("""
-                            INSERT INTO nfl_players_sleeper (
+                            INSERT INTO nfl.nfl_players_sleeper (
                                 player_id, team, espn_id, fantasy_data_id, first_name, last_name, college, position, search_rank,
                                 age, height, weight, high_school, rookie_year, years_exp, depth_chart_order, rotoworld_id,
                                 active, sportradar_id, number, rotowire_id, created_at, last_updated
@@ -190,7 +182,7 @@ async def process_and_store_players(players):
                         datetime.now(), # created_at for initial insert
                         datetime.now()  # last_updated will always be updated
                         )
-                        
+                    
                     except asyncpg.PostgresError as e:
                         print(f"❌ Database error processing player {player_id}: {e}")
                         # No need for conn.rollback() here because we are in an async with conn.transaction() block
@@ -198,8 +190,8 @@ async def process_and_store_players(players):
                         # Or you can explicitly raise if a single player failure should stop the whole batch.
                     except Exception as e:
                         print(f"❌ Unexpected error processing player {player_id}: {e}")
-                
-                print(f"✅ All player data processed and stored successfully!")
+                    processed_count += 1
+                print(f"✅ Script completed. Processed: {processed_count} players successfully.")
 
             except Exception as e:
                 print(f"❌ An error occurred during player data processing: {e}")

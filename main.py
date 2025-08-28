@@ -5,7 +5,7 @@ import discord
 from dotenv import load_dotenv
 from config.settings import BOT_PREFIX, DEFAULT_CHANNEL_ID # Import from your config
 from src.bot.client import MyDiscordBot # Your custom bot class
-from src.db.connections import get_db_connection_pool, close_db_connection_pool
+from src.db.db_operations.connections import get_db_connection_pool, close_db_connection_pool
 
 async def main():
     load_dotenv() # Load environment variables

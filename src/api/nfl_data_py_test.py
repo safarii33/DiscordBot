@@ -4,7 +4,7 @@ import os
 import typing
 import asyncio
 import asyncpg
-from src.db.connections import get_db_connection_pool, close_db_connection_pool
+from src.db.db_operations.connections import get_db_connection_pool, close_db_connection_pool
 from src.db.db_operations.create_psg_table import generate_create_table_sql, execute_create_table_sql
 
 # --- Database Configuration ---
@@ -53,7 +53,7 @@ async def insert_data_to_db(df: pd.DataFrame, table_name: str):
     # The SQL INSERT statement with ON CONFLICT DO UPDATE
     # This matches the structure you provided previously.
     insert_sql = """
-    INSERT INTO nfl_weekly_data_raw (
+    INSERT INTO nfl.nfl_weekly_data_raw (
         player_id, player_name, player_display_name, position, position_group, headshot_url, recent_team,
         season, week, season_type, opponent_team, completions, attempts, passing_yards, passing_tds,
         interceptions, sacks, sack_yards, sack_fumbles, sack_fumbles_lost, passing_air_yards,
@@ -211,7 +211,7 @@ async def main_example():
         print(f"Fetched {len(weekly_data_df)} rows of sample weekly data.")
         
         # 2. Insert data into the database
-        target_table = "nfl_weekly_data_raw"
+        target_table = "nfl.nfl_weekly_data_raw"
         await insert_data_to_db(weekly_data_df, target_table)
 
     finally:
